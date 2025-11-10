@@ -1,15 +1,45 @@
-# Hey Joe - Emotion Tracker 🧠👁️
+# Hey Joe - Emotion & Retail Analytics 🧠👁️🛒
 
-Application web innovante qui combine **eye tracking** et **EEG (Brain Bit)** pour comprendre les émotions des visiteurs selon où se portent leurs regards.
+Application web innovante qui combine **eye tracking** et **EEG (Brain Bit)** pour comprendre les émotions et comportements des utilisateurs.
 
-## 🎯 Fonctionnalités
+## 🎯 Deux Modes d'Analyse
 
+### Mode Général - Analyse Émotionnelle
+Analyse complète des émotions pour :
+- Tests utilisateurs (UX/UI)
+- Études en sciences cognitives
+- Analyse de contenu visuel
+- Recherche académique
+
+### Mode Retail - Merchandising & Produits
+Analyse spécialisée pour le retail :
+- **Shelf Testing** : Analyse de produits sur étagères
+- **Merchandising** : Optimisation du positionnement produits
+- **Tests A/B** : Comparaison de dispositions
+- **Packaging** : Tests d'attractivité des designs
+
+## 🎨 Fonctionnalités
+
+### Fonctionnalités communes
 - **Eye Tracking** : Suivi du regard en temps réel via webcam (WebGazer.js)
 - **EEG Brain Bit** : Capture des signaux cérébraux via dispositif Brain Bit
 - **Analyse d'émotions** : Corrélation entre zones regardées et état émotionnel
 - **Visualisation temps réel** : Dashboard avec heatmaps et graphiques
-- **Enregistrement de sessions** : Sauvegarde et analyse des sessions visiteurs
-- **Rapports analytiques** : Statistiques et insights sur les émotions
+- **Enregistrement de sessions** : Sauvegarde et analyse des sessions
+- **Rapports analytiques** : Statistiques et insights
+
+### Fonctionnalités Retail spécifiques
+- **Import d'images** : Uploadez vos photos d'étagères/planogrammes
+- **Zones produits (AOI)** : Définissez facilement les emplacements produits
+- **Métriques retail** :
+  - Temps jusqu'à première fixation (TTFF)
+  - Durée totale de fixation par produit
+  - Nombre de fixations
+  - Ordre de visualisation
+  - Scores d'attention, intérêt, engagement par produit
+- **Rapport merchandising** : Insights automatiques et recommandations
+- **Heatmaps par produit** : Visualisation des zones d'intérêt
+- **Produits non vus** : Alertes pour repositionnement
 
 ## 🏗️ Architecture
 
@@ -54,6 +84,13 @@ npm run dev:client
 # Server seul (http://localhost:3000)
 npm run dev:server
 ```
+
+## 📚 Documentation
+
+- **[INSTALLATION.md](./INSTALLATION.md)** - Guide d'installation complet
+- **[USAGE.md](./USAGE.md)** - Guide utilisateur mode général
+- **[RETAIL_GUIDE.md](./RETAIL_GUIDE.md)** - Guide complet mode retail (merchandising)
+- **[ARCHITECTURE.md](./ARCHITECTURE.md)** - Architecture technique détaillée
 
 ## 📦 Build & Production
 
