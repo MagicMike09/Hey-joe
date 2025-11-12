@@ -1,15 +1,23 @@
 # 🚀 Guide de Démarrage Rapide - Mode Retail
 
-## ✅ 3 Problèmes CORRIGÉS !
+## ✅ DERNIÈRES CORRECTIONS (AUJOURD'HUI) !
 
-### 1. ✅ Dessin des cadres fonctionne maintenant
-Le système de dessin a été **complètement refait** et fonctionne parfaitement.
+### 1. ✅ CORRIGÉ : Dessin des zones produits
+Le système de dessin a été **complètement réécrit** et fonctionne parfaitement maintenant.
+- Cliquez et glissez pour dessiner
+- Rectangle rose apparaît en temps réel
+- Formulaire s'ouvre automatiquement après dessin
 
-### 2. ✅ Bouton "Terminer l'expérience" ajouté
-Vous pouvez maintenant arrêter l'expérience et obtenir le rapport final.
+### 2. ✅ CORRIGÉ : Boutons Démarrer/Terminer visibles
+Les boutons de contrôle sont maintenant **bien visibles** en haut du dashboard :
+- Bouton vert **"DÉMARRER"** pour commencer l'expérience
+- Bouton rouge **"TERMINER"** pour arrêter et générer le rapport
+- Timer visible pendant l'enregistrement
 
 ### 3. ✅ Précision eye tracking améliorée
 Modèle Ridge + TFFacemesh + 5 enregistrements par point.
+
+**⚠️ IMPORTANT : Faites `git pull` puis `npm run dev` pour obtenir ces correctifs !**
 
 ---
 
