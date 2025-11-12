@@ -5,6 +5,8 @@ import { GazeData } from '../store/trackingStore'
 class EyeTrackingService {
   private isInitialized = false
   private calibrationPoints: Array<{ x: number; y: number }> = []
+  private gazeHistory: Array<{ x: number; y: number }> = []
+  private historySize = 8 // Increased for better smoothing
 
   async initialize() {
     if (this.isInitialized) return
@@ -16,27 +18,54 @@ class EyeTrackingService {
         })
         .begin()
 
-      // Configure WebGazer for maximum precision
+      // Configure WebGazer for MAXIMUM precision
       webgazer.showVideoPreview(true)
       webgazer.showPredictionPoints(true)
 
       // Apply Kalman filter for smoothing
       webgazer.applyKalmanFilter(true)
 
-      // Set regression model (ridge is more accurate than linear)
+      // Set regression model (ridge is most accurate)
       webgazer.setRegression('ridge')
 
-      // Save data more frequently for better accuracy
+      // Save data across sessions for continuous improvement
       webgazer.saveDataAcrossSessions(true)
 
-      // Set tracker (TFFacemesh is more accurate but slower, clmtracker is faster)
+      // Set tracker (TFFacemesh is most accurate)
       webgazer.setTracker('TFFacemesh')
 
       this.isInitialized = true
-      console.log('Eye tracking initialized with high precision settings')
+      console.log('Eye tracking initialized with maximum precision settings')
     } catch (error) {
       console.error('Failed to initialize eye tracking:', error)
       throw error
+    }
+  }
+
+  // Smoothing filter using weighted moving average
+  private smoothGaze(x: number, y: number): { x: number; y: number } {
+    this.gazeHistory.push({ x, y })
+
+    // Keep only recent history
+    if (this.gazeHistory.length > this.historySize) {
+      this.gazeHistory.shift()
+    }
+
+    // Weighted average (recent data has more weight)
+    let totalWeight = 0
+    let smoothX = 0
+    let smoothY = 0
+
+    this.gazeHistory.forEach((point, index) => {
+      const weight = index + 1 // Recent points get higher weight
+      smoothX += point.x * weight
+      smoothY += point.y * weight
+      totalWeight += weight
+    })
+
+    return {
+      x: smoothX / totalWeight,
+      y: smoothY / totalWeight
     }
   }
 
@@ -47,9 +76,12 @@ class EyeTrackingService {
 
     webgazer.setGazeListener((data: any, timestamp: number) => {
       if (data) {
+        // Apply smoothing filter
+        const smoothed = this.smoothGaze(data.x, data.y)
+
         callback({
-          x: data.x,
-          y: data.y,
+          x: smoothed.x,
+          y: smoothed.y,
           timestamp
         })
       }
@@ -60,25 +92,39 @@ class EyeTrackingService {
 
   stopTracking() {
     webgazer.pause()
+    this.gazeHistory = [] // Clear history when stopping
   }
 
   async calibrate(points?: Array<{ x: number; y: number }>) {
     if (points) {
       this.calibrationPoints = points
     } else {
-      // Default 9-point calibration
+      // Enhanced 13-point calibration for better coverage
       const width = window.innerWidth
       const height = window.innerHeight
+      const margin = 0.05 // 5% margin from edges
+
       this.calibrationPoints = [
-        { x: width * 0.1, y: height * 0.1 },
-        { x: width * 0.5, y: height * 0.1 },
-        { x: width * 0.9, y: height * 0.1 },
-        { x: width * 0.1, y: height * 0.5 },
+        // Corners
+        { x: width * (0 + margin), y: height * (0 + margin) },
+        { x: width * (1 - margin), y: height * (0 + margin) },
+        { x: width * (0 + margin), y: height * (1 - margin) },
+        { x: width * (1 - margin), y: height * (1 - margin) },
+
+        // Center of each edge
+        { x: width * 0.5, y: height * (0 + margin) },
+        { x: width * 0.5, y: height * (1 - margin) },
+        { x: width * (0 + margin), y: height * 0.5 },
+        { x: width * (1 - margin), y: height * 0.5 },
+
+        // Center
         { x: width * 0.5, y: height * 0.5 },
-        { x: width * 0.9, y: height * 0.5 },
-        { x: width * 0.1, y: height * 0.9 },
-        { x: width * 0.5, y: height * 0.9 },
-        { x: width * 0.9, y: height * 0.9 }
+
+        // Inner ring
+        { x: width * 0.3, y: height * 0.3 },
+        { x: width * 0.7, y: height * 0.3 },
+        { x: width * 0.3, y: height * 0.7 },
+        { x: width * 0.7, y: height * 0.7 }
       ]
     }
 
@@ -86,24 +132,43 @@ class EyeTrackingService {
   }
 
   recordCalibrationPoint(x: number, y: number) {
-    // Record multiple times for better accuracy (5 clicks per point)
-    for (let i = 0; i < 5; i++) {
+    // Record MORE times for much better accuracy (15 recordings instead of 5)
+    for (let i = 0; i < 15; i++) {
       setTimeout(() => {
         webgazer.recordScreenPosition(x, y)
-      }, i * 100) // Space out recordings by 100ms
+      }, i * 80) // Space out recordings by 80ms (total 1.2 seconds per point)
     }
   }
 
   // Clear old calibration data and start fresh
   clearCalibration() {
     webgazer.clearData()
+    this.gazeHistory = []
   }
 
-  // Get accuracy score (0-100)
-  async validatePrecision(): Promise<number> {
-    // This would need to be called after showing test points
-    // Returns a precision score
-    const precision = webgazer.getTracker()?.getAccuracy?.() || 0
+  // Validate precision after calibration
+  async validatePrecision(testPoints: Array<{ x: number; y: number }>): Promise<number> {
+    const errors: number[] = []
+
+    for (const testPoint of testPoints) {
+      const prediction = await this.getCurrentPrediction()
+      if (prediction) {
+        const error = Math.sqrt(
+          Math.pow(prediction.x - testPoint.x, 2) +
+          Math.pow(prediction.y - testPoint.y, 2)
+        )
+        errors.push(error)
+      }
+    }
+
+    if (errors.length === 0) return 0
+
+    const avgError = errors.reduce((sum, err) => sum + err, 0) / errors.length
+
+    // Convert to percentage (lower error = higher precision)
+    // Assume 200px error = 0% precision, 0px error = 100% precision
+    const precision = Math.max(0, Math.min(100, 100 - (avgError / 2)))
+
     return precision
   }
 
@@ -136,6 +201,7 @@ class EyeTrackingService {
   async destroy() {
     await webgazer.end()
     this.isInitialized = false
+    this.gazeHistory = []
   }
 }
 
