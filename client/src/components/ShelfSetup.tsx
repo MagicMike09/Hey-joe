@@ -1,5 +1,5 @@
-import { useState, useRef } from 'react'
-import { Upload, Plus, Trash2, Save, Image as ImageIcon } from 'lucide-react'
+import { useState, useRef, useEffect } from 'react'
+import { Upload, Trash2, Save, Image as ImageIcon, X } from 'lucide-react'
 import { useRetailStore, ProductZone } from '../store/retailStore'
 
 export default function ShelfSetup() {
@@ -17,10 +17,11 @@ export default function ShelfSetup() {
   } = useRetailStore()
 
   const [isDrawing, setIsDrawing] = useState(false)
-  const [newZone, setNewZone] = useState<Partial<ProductZone> | null>(null)
+  const [startPos, setStartPos] = useState<{ x: number; y: number } | null>(null)
+  const [currentPos, setCurrentPos] = useState<{ x: number; y: number } | null>(null)
   const [showAddForm, setShowAddForm] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
   const imageRef = useRef<HTMLImageElement>(null)
-  const canvasRef = useRef<HTMLCanvasElement>(null)
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -31,8 +32,8 @@ export default function ShelfSetup() {
       const img = new Image()
       img.onload = () => {
         setShelfImage(event.target?.result as string, {
-          width: img.width,
-          height: img.height
+          width: img.naturalWidth,
+          height: img.naturalHeight
         })
       }
       img.src = event.target?.result as string
@@ -40,55 +41,52 @@ export default function ShelfSetup() {
     reader.readAsDataURL(file)
   }
 
-  const handleCanvasMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!canvasRef.current) return
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!containerRef.current || !imageRef.current) return
 
-    const rect = canvasRef.current.getBoundingClientRect()
+    const rect = imageRef.current.getBoundingClientRect()
     const x = e.clientX - rect.left
     const y = e.clientY - rect.top
 
     setIsDrawing(true)
-    setNewZone({
-      x,
-      y,
-      width: 0,
-      height: 0
-    })
+    setStartPos({ x, y })
+    setCurrentPos({ x, y })
   }
 
-  const handleCanvasMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!isDrawing || !newZone || !canvasRef.current) return
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isDrawing || !containerRef.current || !imageRef.current) return
 
-    const rect = canvasRef.current.getBoundingClientRect()
-    const currentX = e.clientX - rect.left
-    const currentY = e.clientY - rect.top
+    const rect = imageRef.current.getBoundingClientRect()
+    const x = e.clientX - rect.left
+    const y = e.clientY - rect.top
 
-    setNewZone({
-      ...newZone,
-      width: currentX - newZone.x!,
-      height: currentY - newZone.y!
-    })
-
-    // Redraw canvas
-    drawCanvas()
+    setCurrentPos({ x, y })
   }
 
-  const handleCanvasMouseUp = () => {
-    if (!isDrawing || !newZone) return
+  const handleMouseUp = () => {
+    if (!isDrawing || !startPos || !currentPos) return
 
     setIsDrawing(false)
 
+    const width = Math.abs(currentPos.x - startPos.x)
+    const height = Math.abs(currentPos.y - startPos.y)
+
     // Only create zone if it has meaningful size
-    if (Math.abs(newZone.width!) > 20 && Math.abs(newZone.height!) > 20) {
+    if (width > 30 && height > 30) {
       setShowAddForm(true)
     } else {
-      setNewZone(null)
-      drawCanvas()
+      setStartPos(null)
+      setCurrentPos(null)
     }
   }
 
   const saveNewZone = (name: string, brand: string, price: number, category: string) => {
-    if (!newZone) return
+    if (!startPos || !currentPos) return
+
+    const x = Math.min(startPos.x, currentPos.x)
+    const y = Math.min(startPos.y, currentPos.y)
+    const width = Math.abs(currentPos.x - startPos.x)
+    const height = Math.abs(currentPos.y - startPos.y)
 
     const zone: ProductZone = {
       id: `product_${Date.now()}`,
@@ -96,62 +94,43 @@ export default function ShelfSetup() {
       brand,
       price,
       category,
-      x: newZone.x!,
-      y: newZone.y!,
-      width: Math.abs(newZone.width!),
-      height: Math.abs(newZone.height!),
+      x,
+      y,
+      width,
+      height,
       color: getRandomColor()
     }
 
     addProductZone(zone)
-    setNewZone(null)
+    setStartPos(null)
+    setCurrentPos(null)
     setShowAddForm(false)
-    drawCanvas()
   }
 
-  const drawCanvas = () => {
-    if (!canvasRef.current || !imageRef.current) return
-
-    const canvas = canvasRef.current
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return
-
-    // Clear canvas
-    ctx.clearRect(0, 0, canvas.width, canvas.height)
-
-    // Draw existing zones
-    productZones.forEach(zone => {
-      ctx.strokeStyle = zone.color
-      ctx.lineWidth = 3
-      ctx.strokeRect(zone.x, zone.y, zone.width, zone.height)
-
-      // Draw label
-      ctx.fillStyle = zone.color
-      ctx.fillRect(zone.x, zone.y - 25, Math.max(100, zone.name.length * 8), 25)
-      ctx.fillStyle = 'white'
-      ctx.font = '12px sans-serif'
-      ctx.fillText(zone.name, zone.x + 5, zone.y - 8)
-    })
-
-    // Draw new zone being created
-    if (newZone && newZone.x !== undefined && newZone.width !== undefined) {
-      ctx.strokeStyle = '#ec4899'
-      ctx.lineWidth = 2
-      ctx.setLineDash([5, 5])
-      ctx.strokeRect(newZone.x, newZone.y!, newZone.width, newZone.height!)
-      ctx.setLineDash([])
-    }
+  const cancelDrawing = () => {
+    setShowAddForm(false)
+    setStartPos(null)
+    setCurrentPos(null)
+    setIsDrawing(false)
   }
 
   const getRandomColor = () => {
-    const colors = ['#3b82f6', '#ec4899', '#10b981', '#f59e0b', '#8b5cf6', '#06b6d4']
+    const colors = ['#3b82f6', '#ec4899', '#10b981', '#f59e0b', '#8b5cf6', '#06b6d4', '#ef4444']
     return colors[Math.floor(Math.random() * colors.length)]
   }
 
-  // Redraw canvas when zones change
-  useState(() => {
-    drawCanvas()
-  })
+  // Calculate current drawing rectangle
+  const getCurrentRect = () => {
+    if (!startPos || !currentPos) return null
+    return {
+      x: Math.min(startPos.x, currentPos.x),
+      y: Math.min(startPos.y, currentPos.y),
+      width: Math.abs(currentPos.x - startPos.x),
+      height: Math.abs(currentPos.y - startPos.y)
+    }
+  }
+
+  const currentRect = getCurrentRect()
 
   return (
     <div className="space-y-6">
@@ -229,27 +208,70 @@ export default function ShelfSetup() {
             <p className="text-sm text-slate-300 mb-2">
               <strong>Instructions :</strong> Cliquez et glissez sur l'image pour dessiner un rectangle autour de chaque produit.
             </p>
+            <p className="text-xs text-slate-400">
+              Astuce : Dessinez des rectangles généreux (avec marge) pour compenser l'imprécision de l'eye tracking.
+            </p>
           </div>
 
-          {/* Canvas for drawing zones */}
-          <div className="relative">
+          {/* Image with overlay */}
+          <div
+            ref={containerRef}
+            className="relative inline-block bg-slate-900 rounded-lg overflow-hidden"
+            style={{ cursor: 'crosshair' }}
+          >
             <img
               ref={imageRef}
               src={shelfImage}
               alt="Shelf"
-              className="w-full rounded-lg"
-              onLoad={drawCanvas}
+              className="max-w-full h-auto block"
+              onMouseDown={handleMouseDown}
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
+              onMouseLeave={() => {
+                if (isDrawing) {
+                  handleMouseUp()
+                }
+              }}
+              draggable={false}
             />
-            <canvas
-              ref={canvasRef}
-              width={shelfImageDimensions?.width}
-              height={shelfImageDimensions?.height}
-              className="absolute top-0 left-0 w-full h-full cursor-crosshair"
-              onMouseDown={handleCanvasMouseDown}
-              onMouseMove={handleCanvasMouseMove}
-              onMouseUp={handleCanvasMouseUp}
-              onMouseLeave={() => setIsDrawing(false)}
-            />
+
+            {/* Existing zones overlay */}
+            {productZones.map((zone) => (
+              <div
+                key={zone.id}
+                className="absolute pointer-events-none"
+                style={{
+                  left: `${zone.x}px`,
+                  top: `${zone.y}px`,
+                  width: `${zone.width}px`,
+                  height: `${zone.height}px`,
+                  border: `3px solid ${zone.color}`,
+                  boxShadow: `0 0 10px ${zone.color}50`
+                }}
+              >
+                <div
+                  className="absolute -top-7 left-0 px-2 py-1 rounded text-white text-xs font-semibold whitespace-nowrap"
+                  style={{ backgroundColor: zone.color }}
+                >
+                  {zone.name}
+                </div>
+              </div>
+            ))}
+
+            {/* Current drawing rectangle */}
+            {currentRect && (
+              <div
+                className="absolute pointer-events-none"
+                style={{
+                  left: `${currentRect.x}px`,
+                  top: `${currentRect.y}px`,
+                  width: `${currentRect.width}px`,
+                  height: `${currentRect.height}px`,
+                  border: '3px dashed #ec4899',
+                  backgroundColor: 'rgba(236, 72, 153, 0.1)'
+                }}
+              />
+            )}
           </div>
 
           {/* Product Zones List */}
@@ -264,7 +286,7 @@ export default function ShelfSetup() {
                   >
                     <div className="flex items-center space-x-3">
                       <div
-                        className="w-4 h-4 rounded"
+                        className="w-4 h-4 rounded flex-shrink-0"
                         style={{ backgroundColor: zone.color }}
                       />
                       <div>
@@ -278,10 +300,7 @@ export default function ShelfSetup() {
                       </div>
                     </div>
                     <button
-                      onClick={() => {
-                        deleteProductZone(zone.id)
-                        drawCanvas()
-                      }}
+                      onClick={() => deleteProductZone(zone.id)}
                       className="text-red-400 hover:text-red-300 transition-colors"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -295,10 +314,18 @@ export default function ShelfSetup() {
       )}
 
       {/* Add Product Form Modal */}
-      {showAddForm && newZone && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      {showAddForm && currentRect && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-slate-800 rounded-xl p-6 max-w-md w-full mx-4">
-            <h3 className="text-xl font-semibold text-white mb-4">Informations produit</h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-semibold text-white">Informations produit</h3>
+              <button
+                onClick={cancelDrawing}
+                className="text-slate-400 hover:text-white transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
 
             <form
               onSubmit={(e) => {
@@ -319,6 +346,7 @@ export default function ShelfSetup() {
                   type="text"
                   name="name"
                   required
+                  autoFocus
                   placeholder="Ex: Coca-Cola 33cl"
                   className="w-full bg-slate-700 text-white rounded-lg px-4 py-2 border border-slate-600 focus:border-purple-500 focus:outline-none"
                 />
@@ -358,11 +386,7 @@ export default function ShelfSetup() {
               <div className="flex space-x-3">
                 <button
                   type="button"
-                  onClick={() => {
-                    setShowAddForm(false)
-                    setNewZone(null)
-                    drawCanvas()
-                  }}
+                  onClick={cancelDrawing}
                   className="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-2 rounded-lg transition-colors"
                 >
                   Annuler

@@ -7,6 +7,7 @@ import EmotionAnalysis from './components/EmotionAnalysis'
 import ShelfSetup from './components/ShelfSetup'
 import RetailDashboard from './components/RetailDashboard'
 import MerchandisingReport from './components/MerchandisingReport'
+import SessionControl from './components/SessionControl'
 import { useTrackingStore } from './store/trackingStore'
 import { useRetailStore } from './store/retailStore'
 import { retailAnalyticsService } from './services/retailAnalyticsService'
@@ -274,6 +275,7 @@ function App() {
                 </button>
               </div>
             </div>
+            <SessionControl />
             <RetailDashboard />
             <MerchandisingReport />
           </div>
