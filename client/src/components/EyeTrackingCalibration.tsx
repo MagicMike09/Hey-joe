@@ -132,6 +132,9 @@ export default function EyeTrackingCalibration() {
                 // Completed point
                 <div className="relative">
                   <CheckCircle className="w-10 h-10 text-green-400" />
+                  <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-green-500 text-white text-xs font-bold rounded-full w-6 h-6 flex items-center justify-center">
+                    {index + 1}
+                  </div>
                 </div>
               ) : isActive ? (
                 // Active point
@@ -151,6 +154,11 @@ export default function EyeTrackingCalibration() {
                   {/* Center dot */}
                   <div className={`w-8 h-8 rounded-full ${isRecording ? 'bg-red-700 animate-ping' : 'bg-red-500'} transform -translate-x-1/2 -translate-y-1/2 absolute top-1/2 left-1/2 shadow-lg shadow-red-500/50`} />
 
+                  {/* Number badge */}
+                  <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-red-500 text-white text-sm font-bold rounded-full w-8 h-8 flex items-center justify-center border-2 border-white shadow-lg">
+                    {index + 1}
+                  </div>
+
                   {/* "Click here" label */}
                   {!isRecording && (
                     <div className="absolute top-14 left-1/2 transform -translate-x-1/2 whitespace-nowrap">
@@ -162,7 +170,11 @@ export default function EyeTrackingCalibration() {
                 </div>
               ) : (
                 // Future point (not yet reached)
-                <div className="w-3 h-3 rounded-full bg-slate-700 opacity-20" />
+                <div className="relative">
+                  <div className="w-8 h-8 rounded-full bg-white/30 border-2 border-white/50 flex items-center justify-center">
+                    <span className="text-white text-xs font-bold">{index + 1}</span>
+                  </div>
+                </div>
               )}
             </button>
           )
