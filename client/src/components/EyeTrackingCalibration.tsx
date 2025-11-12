@@ -38,16 +38,19 @@ export default function EyeTrackingCalibration() {
   }
 
   const handleCalibrationClick = (point: { x: number; y: number }, index: number) => {
-    // Record calibration point
+    // Record calibration point (now records 5 times internally for better precision)
     eyeTrackingService.recordCalibrationPoint(point.x, point.y)
 
-    // Move to next point
-    if (index < calibrationPoints.length - 1) {
-      setCurrentPoint(index + 1)
-    } else {
-      // Calibration complete
-      finishCalibration()
-    }
+    // Wait a bit for the recordings to complete (5 recordings * 100ms)
+    setTimeout(() => {
+      // Move to next point
+      if (index < calibrationPoints.length - 1) {
+        setCurrentPoint(index + 1)
+      } else {
+        // Calibration complete
+        finishCalibration()
+      }
+    }, 600) // Wait for recordings to complete + buffer
   }
 
   const finishCalibration = () => {
