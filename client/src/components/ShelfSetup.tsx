@@ -170,8 +170,16 @@ export default function ShelfSetup() {
             </label>
           </div>
 
-          <div className="bg-slate-900 rounded-lg p-4 mb-4">
-            <p className="text-sm text-white"><strong>CLIQUEZ ET GLISSEZ</strong> pour dessiner un rectangle</p>
+          <div className="bg-purple-900/50 border border-purple-500 rounded-lg p-4 mb-4">
+            <p className="text-white font-bold mb-2">✏️ MODE DESSIN ACTIF</p>
+            <p className="text-sm text-purple-200">
+              <strong>CLIQUEZ ET GLISSEZ</strong> sur l'image pour dessiner un rectangle autour d'un produit.
+            </p>
+            {productZones.length > 0 && (
+              <p className="text-sm text-green-300 mt-2">
+                ✅ {productZones.length} zone(s) créée(s) - Vous pouvez dessiner d'autres zones !
+              </p>
+            )}
           </div>
 
           {/* Image container */}

@@ -38,16 +38,36 @@ export default function MerchandisingReport() {
 
   if (metricsArray.length === 0) {
     return (
-      <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-8 border border-slate-700 text-center">
-        <BarChart3 className="w-12 h-12 text-slate-400 mx-auto mb-4" />
-        <p className="text-slate-300 text-lg font-semibold mb-2">Rapport de merchandising</p>
-        <p className="text-slate-400">En attente de données...</p>
+      <div className="bg-gradient-to-r from-blue-900/50 to-purple-900/50 backdrop-blur-sm rounded-xl p-8 border-2 border-blue-500/50 text-center">
+        <BarChart3 className="w-16 h-16 text-blue-400 mx-auto mb-4 animate-pulse" />
+        <h3 className="text-2xl font-bold text-white mb-3">📊 Rapport de Merchandising</h3>
+        <div className="bg-blue-500/20 rounded-lg p-4 max-w-md mx-auto">
+          <p className="text-blue-200 mb-2">⏳ En attente de données...</p>
+          <p className="text-sm text-blue-300">
+            {productZones.length === 0
+              ? "Veuillez définir des zones produits"
+              : gazeData.length < 10
+              ? `Collecte de données : ${gazeData.length}/10 points de regard minimum`
+              : "Calcul des métriques en cours..."}
+          </p>
+        </div>
       </div>
     )
   }
 
   return (
     <div className="space-y-6">
+      {/* Report Title */}
+      <div className="bg-gradient-to-r from-green-900/50 to-emerald-900/50 rounded-xl p-6 border-2 border-green-500/50">
+        <h2 className="text-3xl font-bold text-white mb-2 flex items-center space-x-3">
+          <BarChart3 className="w-8 h-8 text-green-400" />
+          <span>📊 Rapport de Merchandising</span>
+        </h2>
+        <p className="text-green-200">
+          Analyse complète basée sur {gazeData.length} points de regard et {productZones.length} produits
+        </p>
+      </div>
+
       {/* Summary Cards */}
       <div className="grid md:grid-cols-4 gap-4">
         <SummaryCard
