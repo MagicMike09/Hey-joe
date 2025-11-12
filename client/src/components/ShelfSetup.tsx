@@ -1,11 +1,10 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef } from 'react'
 import { Upload, Trash2, Save, Image as ImageIcon, X } from 'lucide-react'
 import { useRetailStore, ProductZone } from '../store/retailStore'
 
 export default function ShelfSetup() {
   const {
     shelfImage,
-    shelfImageDimensions,
     productZones,
     testName,
     testType,
@@ -17,10 +16,11 @@ export default function ShelfSetup() {
   } = useRetailStore()
 
   const [isDrawing, setIsDrawing] = useState(false)
-  const [startPos, setStartPos] = useState<{ x: number; y: number } | null>(null)
-  const [currentPos, setCurrentPos] = useState<{ x: number; y: number } | null>(null)
-  const [showAddForm, setShowAddForm] = useState(false)
-  const containerRef = useRef<HTMLDivElement>(null)
+  const [startX, setStartX] = useState(0)
+  const [startY, setStartY] = useState(0)
+  const [currentX, setCurrentX] = useState(0)
+  const [currentY, setCurrentY] = useState(0)
+  const [showForm, setShowForm] = useState(false)
   const imageRef = useRef<HTMLImageElement>(null)
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -41,103 +41,89 @@ export default function ShelfSetup() {
     reader.readAsDataURL(file)
   }
 
-  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!containerRef.current || !imageRef.current) return
-
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (!imageRef.current) return
     const rect = imageRef.current.getBoundingClientRect()
     const x = e.clientX - rect.left
     const y = e.clientY - rect.top
 
     setIsDrawing(true)
-    setStartPos({ x, y })
-    setCurrentPos({ x, y })
+    setStartX(x)
+    setStartY(y)
+    setCurrentX(x)
+    setCurrentY(y)
   }
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!isDrawing || !containerRef.current || !imageRef.current) return
-
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDrawing || !imageRef.current) return
     const rect = imageRef.current.getBoundingClientRect()
     const x = e.clientX - rect.left
     const y = e.clientY - rect.top
 
-    setCurrentPos({ x, y })
+    setCurrentX(x)
+    setCurrentY(y)
   }
 
   const handleMouseUp = () => {
-    if (!isDrawing || !startPos || !currentPos) return
-
+    if (!isDrawing) return
     setIsDrawing(false)
 
-    const width = Math.abs(currentPos.x - startPos.x)
-    const height = Math.abs(currentPos.y - startPos.y)
+    const width = Math.abs(currentX - startX)
+    const height = Math.abs(currentY - startY)
 
-    // Only create zone if it has meaningful size
-    if (width > 30 && height > 30) {
-      setShowAddForm(true)
-    } else {
-      setStartPos(null)
-      setCurrentPos(null)
+    if (width > 20 && height > 20) {
+      setShowForm(true)
     }
   }
 
-  const saveNewZone = (name: string, brand: string, price: number, category: string) => {
-    if (!startPos || !currentPos) return
+  const saveZone = (name: string, brand: string, price: string, category: string) => {
+    const x = Math.min(startX, currentX)
+    const y = Math.min(startY, currentY)
+    const width = Math.abs(currentX - startX)
+    const height = Math.abs(currentY - startY)
 
-    const x = Math.min(startPos.x, currentPos.x)
-    const y = Math.min(startPos.y, currentPos.y)
-    const width = Math.abs(currentPos.x - startPos.x)
-    const height = Math.abs(currentPos.y - startPos.y)
+    const colors = ['#3b82f6', '#ec4899', '#10b981', '#f59e0b', '#8b5cf6']
+    const color = colors[productZones.length % colors.length]
 
     const zone: ProductZone = {
-      id: `product_${Date.now()}`,
+      id: `prod_${Date.now()}`,
       name,
       brand,
-      price,
+      price: parseFloat(price) || 0,
       category,
       x,
       y,
       width,
       height,
-      color: getRandomColor()
+      color
     }
 
     addProductZone(zone)
-    setStartPos(null)
-    setCurrentPos(null)
-    setShowAddForm(false)
+    setShowForm(false)
+    setStartX(0)
+    setStartY(0)
+    setCurrentX(0)
+    setCurrentY(0)
   }
 
-  const cancelDrawing = () => {
-    setShowAddForm(false)
-    setStartPos(null)
-    setCurrentPos(null)
-    setIsDrawing(false)
+  const getRectStyle = () => {
+    if (!isDrawing && !showForm) return null
+
+    const x = Math.min(startX, currentX)
+    const y = Math.min(startY, currentY)
+    const width = Math.abs(currentX - startX)
+    const height = Math.abs(currentY - startY)
+
+    return { left: x, top: y, width, height }
   }
 
-  const getRandomColor = () => {
-    const colors = ['#3b82f6', '#ec4899', '#10b981', '#f59e0b', '#8b5cf6', '#06b6d4', '#ef4444']
-    return colors[Math.floor(Math.random() * colors.length)]
-  }
-
-  // Calculate current drawing rectangle
-  const getCurrentRect = () => {
-    if (!startPos || !currentPos) return null
-    return {
-      x: Math.min(startPos.x, currentPos.x),
-      y: Math.min(startPos.y, currentPos.y),
-      width: Math.abs(currentPos.x - startPos.x),
-      height: Math.abs(currentPos.y - startPos.y)
-    }
-  }
-
-  const currentRect = getCurrentRect()
+  const rect = getRectStyle()
 
   return (
     <div className="space-y-6">
-      {/* Test Configuration */}
-      <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700">
-        <h3 className="text-xl font-semibold text-white mb-4">Configuration du test</h3>
-
+      {/* Configuration */}
+      <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700">
+        <h3 className="text-xl font-semibold text-white mb-4">Configuration</h3>
         <div className="grid md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm text-slate-300 mb-2">Nom du test</label>
@@ -145,17 +131,16 @@ export default function ShelfSetup() {
               type="text"
               value={testName}
               onChange={(e) => setTestName(e.target.value)}
-              placeholder="Ex: Test disposition produits juin 2024"
-              className="w-full bg-slate-700 text-white rounded-lg px-4 py-2 border border-slate-600 focus:border-purple-500 focus:outline-none"
+              placeholder="Mon test"
+              className="w-full bg-slate-700 text-white rounded-lg px-4 py-2 border border-slate-600 focus:outline-none"
             />
           </div>
-
           <div>
-            <label className="block text-sm text-slate-300 mb-2">Type de test</label>
+            <label className="block text-sm text-slate-300 mb-2">Type</label>
             <select
               value={testType}
               onChange={(e) => setTestType(e.target.value as 'single' | 'ab-test')}
-              className="w-full bg-slate-700 text-white rounded-lg px-4 py-2 border border-slate-600 focus:border-purple-500 focus:outline-none"
+              className="w-full bg-slate-700 text-white rounded-lg px-4 py-2 border border-slate-600 focus:outline-none"
             >
               <option value="single">Test simple</option>
               <option value="ab-test">Test A/B</option>
@@ -164,93 +149,60 @@ export default function ShelfSetup() {
         </div>
       </div>
 
-      {/* Image Upload */}
+      {/* Image */}
       {!shelfImage ? (
-        <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-8 border border-slate-700">
-          <div className="flex flex-col items-center justify-center space-y-4">
-            <ImageIcon className="w-16 h-16 text-slate-400" />
-            <h3 className="text-xl font-semibold text-white">Importer l'image de l'étagère</h3>
-            <p className="text-slate-400 text-center max-w-md">
-              Importez une photo de votre étagère ou planogramme pour définir les zones produits
-            </p>
-
-            <label className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold px-6 py-3 rounded-lg cursor-pointer transition-all flex items-center space-x-2">
-              <Upload className="w-5 h-5" />
-              <span>Choisir une image</span>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleImageUpload}
-                className="hidden"
-              />
-            </label>
-          </div>
+        <div className="bg-slate-800/50 rounded-xl p-8 border border-slate-700 text-center">
+          <ImageIcon className="w-16 h-16 text-slate-400 mx-auto mb-4" />
+          <h3 className="text-xl font-semibold text-white mb-4">Importer l'image</h3>
+          <label className="inline-block bg-purple-500 hover:bg-purple-600 text-white font-semibold px-6 py-3 rounded-lg cursor-pointer">
+            <Upload className="w-5 h-5 inline mr-2" />
+            Choisir une image
+            <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+          </label>
         </div>
       ) : (
-        <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl p-6 border border-slate-700">
+        <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xl font-semibold text-white">
-              Définir les zones produits ({productZones.length})
-            </h3>
-            <label className="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-lg cursor-pointer transition-colors flex items-center space-x-2">
-              <Upload className="w-4 h-4" />
-              <span>Changer l'image</span>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleImageUpload}
-                className="hidden"
-              />
+            <h3 className="text-xl font-semibold text-white">Zones produits ({productZones.length})</h3>
+            <label className="bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-lg cursor-pointer">
+              Changer
+              <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
             </label>
           </div>
 
           <div className="bg-slate-900 rounded-lg p-4 mb-4">
-            <p className="text-sm text-slate-300 mb-2">
-              <strong>Instructions :</strong> Cliquez et glissez sur l'image pour dessiner un rectangle autour de chaque produit.
-            </p>
-            <p className="text-xs text-slate-400">
-              Astuce : Dessinez des rectangles généreux (avec marge) pour compenser l'imprécision de l'eye tracking.
-            </p>
+            <p className="text-sm text-white"><strong>CLIQUEZ ET GLISSEZ</strong> pour dessiner un rectangle</p>
           </div>
 
-          {/* Image with overlay */}
-          <div
-            ref={containerRef}
-            className="relative inline-block bg-slate-900 rounded-lg overflow-hidden"
-            style={{ cursor: 'crosshair' }}
-          >
+          {/* Image container */}
+          <div className="relative inline-block bg-black">
             <img
               ref={imageRef}
               src={shelfImage}
               alt="Shelf"
-              className="max-w-full h-auto block"
+              className="max-w-full block"
+              style={{ userSelect: 'none' }}
               onMouseDown={handleMouseDown}
               onMouseMove={handleMouseMove}
               onMouseUp={handleMouseUp}
-              onMouseLeave={() => {
-                if (isDrawing) {
-                  handleMouseUp()
-                }
-              }}
               draggable={false}
             />
 
-            {/* Existing zones overlay */}
+            {/* Existing zones */}
             {productZones.map((zone) => (
               <div
                 key={zone.id}
                 className="absolute pointer-events-none"
                 style={{
-                  left: `${zone.x}px`,
-                  top: `${zone.y}px`,
-                  width: `${zone.width}px`,
-                  height: `${zone.height}px`,
-                  border: `3px solid ${zone.color}`,
-                  boxShadow: `0 0 10px ${zone.color}50`
+                  left: zone.x,
+                  top: zone.y,
+                  width: zone.width,
+                  height: zone.height,
+                  border: `3px solid ${zone.color}`
                 }}
               >
                 <div
-                  className="absolute -top-7 left-0 px-2 py-1 rounded text-white text-xs font-semibold whitespace-nowrap"
+                  className="absolute -top-6 left-0 px-2 py-1 text-white text-xs font-bold"
                   style={{ backgroundColor: zone.color }}
                 >
                   {zone.name}
@@ -258,50 +210,36 @@ export default function ShelfSetup() {
               </div>
             ))}
 
-            {/* Current drawing rectangle */}
-            {currentRect && (
+            {/* Current drawing */}
+            {rect && (
               <div
-                className="absolute pointer-events-none"
+                className="absolute pointer-events-none border-4 border-dashed border-pink-500"
                 style={{
-                  left: `${currentRect.x}px`,
-                  top: `${currentRect.y}px`,
-                  width: `${currentRect.width}px`,
-                  height: `${currentRect.height}px`,
-                  border: '3px dashed #ec4899',
-                  backgroundColor: 'rgba(236, 72, 153, 0.1)'
+                  left: rect.left,
+                  top: rect.top,
+                  width: rect.width,
+                  height: rect.height,
+                  backgroundColor: 'rgba(236, 72, 153, 0.2)'
                 }}
               />
             )}
           </div>
 
-          {/* Product Zones List */}
+          {/* Products list */}
           {productZones.length > 0 && (
             <div className="mt-6">
-              <h4 className="text-lg font-semibold text-white mb-3">Produits définis</h4>
-              <div className="grid md:grid-cols-2 gap-3">
+              <h4 className="text-white font-semibold mb-3">Produits</h4>
+              <div className="space-y-2">
                 {productZones.map((zone) => (
-                  <div
-                    key={zone.id}
-                    className="bg-slate-700/30 rounded-lg p-3 flex items-center justify-between"
-                  >
+                  <div key={zone.id} className="bg-slate-700/30 rounded-lg p-3 flex items-center justify-between">
                     <div className="flex items-center space-x-3">
-                      <div
-                        className="w-4 h-4 rounded flex-shrink-0"
-                        style={{ backgroundColor: zone.color }}
-                      />
-                      <div>
-                        <p className="text-white font-semibold">{zone.name}</p>
-                        {zone.brand && (
-                          <p className="text-xs text-slate-400">{zone.brand}</p>
-                        )}
-                        {zone.price && (
-                          <p className="text-xs text-slate-400">{zone.price}€</p>
-                        )}
-                      </div>
+                      <div className="w-4 h-4 rounded" style={{ backgroundColor: zone.color }} />
+                      <span className="text-white font-semibold">{zone.name}</span>
+                      {zone.brand && <span className="text-slate-400 text-sm">{zone.brand}</span>}
                     </div>
                     <button
                       onClick={() => deleteProductZone(zone.id)}
-                      className="text-red-400 hover:text-red-300 transition-colors"
+                      className="text-red-400 hover:text-red-300"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -313,16 +251,13 @@ export default function ShelfSetup() {
         </div>
       )}
 
-      {/* Add Product Form Modal */}
-      {showAddForm && currentRect && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-slate-800 rounded-xl p-6 max-w-md w-full mx-4">
+      {/* Form Modal */}
+      {showForm && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+          <div className="bg-slate-800 rounded-xl p-6 max-w-md w-full m-4">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-semibold text-white">Informations produit</h3>
-              <button
-                onClick={cancelDrawing}
-                className="text-slate-400 hover:text-white transition-colors"
-              >
+              <h3 className="text-xl font-bold text-white">Nouveau produit</h3>
+              <button onClick={() => setShowForm(false)} className="text-slate-400 hover:text-white">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -330,25 +265,24 @@ export default function ShelfSetup() {
             <form
               onSubmit={(e) => {
                 e.preventDefault()
-                const formData = new FormData(e.currentTarget)
-                saveNewZone(
-                  formData.get('name') as string,
-                  formData.get('brand') as string,
-                  parseFloat(formData.get('price') as string) || 0,
-                  formData.get('category') as string
-                )
+                const form = e.target as HTMLFormElement
+                const name = (form.elements.namedItem('name') as HTMLInputElement).value
+                const brand = (form.elements.namedItem('brand') as HTMLInputElement).value
+                const price = (form.elements.namedItem('price') as HTMLInputElement).value
+                const category = (form.elements.namedItem('category') as HTMLInputElement).value
+                saveZone(name, brand, price, category)
               }}
               className="space-y-4"
             >
               <div>
-                <label className="block text-sm text-slate-300 mb-1">Nom du produit *</label>
+                <label className="block text-sm text-slate-300 mb-1">Nom *</label>
                 <input
                   type="text"
                   name="name"
                   required
                   autoFocus
                   placeholder="Ex: Coca-Cola 33cl"
-                  className="w-full bg-slate-700 text-white rounded-lg px-4 py-2 border border-slate-600 focus:border-purple-500 focus:outline-none"
+                  className="w-full bg-slate-700 text-white rounded-lg px-4 py-2 border border-slate-600 focus:outline-none"
                 />
               </div>
 
@@ -358,7 +292,7 @@ export default function ShelfSetup() {
                   type="text"
                   name="brand"
                   placeholder="Ex: Coca-Cola"
-                  className="w-full bg-slate-700 text-white rounded-lg px-4 py-2 border border-slate-600 focus:border-purple-500 focus:outline-none"
+                  className="w-full bg-slate-700 text-white rounded-lg px-4 py-2 border border-slate-600 focus:outline-none"
                 />
               </div>
 
@@ -369,7 +303,7 @@ export default function ShelfSetup() {
                   name="price"
                   step="0.01"
                   placeholder="Ex: 1.50"
-                  className="w-full bg-slate-700 text-white rounded-lg px-4 py-2 border border-slate-600 focus:border-purple-500 focus:outline-none"
+                  className="w-full bg-slate-700 text-white rounded-lg px-4 py-2 border border-slate-600 focus:outline-none"
                 />
               </div>
 
@@ -379,21 +313,21 @@ export default function ShelfSetup() {
                   type="text"
                   name="category"
                   placeholder="Ex: Boissons"
-                  className="w-full bg-slate-700 text-white rounded-lg px-4 py-2 border border-slate-600 focus:border-purple-500 focus:outline-none"
+                  className="w-full bg-slate-700 text-white rounded-lg px-4 py-2 border border-slate-600 focus:outline-none"
                 />
               </div>
 
               <div className="flex space-x-3">
                 <button
                   type="button"
-                  onClick={cancelDrawing}
-                  className="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-2 rounded-lg transition-colors"
+                  onClick={() => setShowForm(false)}
+                  className="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-2 rounded-lg"
                 >
                   Annuler
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white py-2 rounded-lg transition-all flex items-center justify-center space-x-2"
+                  className="flex-1 bg-purple-500 hover:bg-purple-600 text-white py-2 rounded-lg flex items-center justify-center space-x-2"
                 >
                   <Save className="w-4 h-4" />
                   <span>Enregistrer</span>
