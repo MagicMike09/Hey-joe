@@ -76,6 +76,15 @@ export default function ShelfSetup() {
     }
   }
 
+  const resetDrawing = () => {
+    setIsDrawing(false)
+    setShowForm(false)
+    setStartX(0)
+    setStartY(0)
+    setCurrentX(0)
+    setCurrentY(0)
+  }
+
   const saveZone = (name: string, brand: string, price: string, category: string) => {
     const x = Math.min(startX, currentX)
     const y = Math.min(startY, currentY)
@@ -99,11 +108,7 @@ export default function ShelfSetup() {
     }
 
     addProductZone(zone)
-    setShowForm(false)
-    setStartX(0)
-    setStartY(0)
-    setCurrentX(0)
-    setCurrentY(0)
+    resetDrawing()
   }
 
   const getRectStyle = () => {
@@ -171,28 +176,36 @@ export default function ShelfSetup() {
           </div>
 
           <div className="bg-purple-900/50 border border-purple-500 rounded-lg p-4 mb-4">
-            <p className="text-white font-bold mb-2">✏️ MODE DESSIN ACTIF</p>
+            <p className="text-white font-bold mb-2">✏️ MODE DESSIN ACTIF {isDrawing && '🎨 (DESSIN EN COURS...)'}</p>
             <p className="text-sm text-purple-200">
-              <strong>CLIQUEZ ET GLISSEZ</strong> sur l'image pour dessiner un rectangle autour d'un produit.
+              <strong>CLIQUEZ ET MAINTENEZ</strong> le bouton de la souris, puis <strong>GLISSEZ</strong> pour dessiner un rectangle.
+            </p>
+            <p className="text-sm text-yellow-300 mt-1">
+              💡 Après avoir enregistré une zone, vous pouvez immédiatement dessiner une autre zone !
             </p>
             {productZones.length > 0 && (
-              <p className="text-sm text-green-300 mt-2">
-                ✅ {productZones.length} zone(s) créée(s) - Vous pouvez dessiner d'autres zones !
+              <p className="text-sm text-green-300 mt-2 font-bold">
+                ✅ {productZones.length} zone(s) créée(s) - DESSINEZ LA SUIVANTE !
               </p>
             )}
           </div>
 
           {/* Image container */}
-          <div className="relative inline-block bg-black">
+          <div className="relative inline-block bg-black" style={{ cursor: isDrawing ? 'crosshair' : 'crosshair' }}>
             <img
               ref={imageRef}
               src={shelfImage}
               alt="Shelf"
               className="max-w-full block"
-              style={{ userSelect: 'none' }}
+              style={{ userSelect: 'none', cursor: 'crosshair' }}
               onMouseDown={handleMouseDown}
               onMouseMove={handleMouseMove}
               onMouseUp={handleMouseUp}
+              onMouseLeave={() => {
+                if (isDrawing) {
+                  setIsDrawing(false)
+                }
+              }}
               draggable={false}
             />
 
@@ -221,15 +234,20 @@ export default function ShelfSetup() {
             {/* Current drawing */}
             {rect && (
               <div
-                className="absolute pointer-events-none border-4 border-dashed border-pink-500"
+                className="absolute pointer-events-none border-4 border-dashed border-pink-500 animate-pulse"
                 style={{
                   left: rect.left,
                   top: rect.top,
                   width: rect.width,
                   height: rect.height,
-                  backgroundColor: 'rgba(236, 72, 153, 0.2)'
+                  backgroundColor: 'rgba(236, 72, 153, 0.4)',
+                  boxShadow: '0 0 20px rgba(236, 72, 153, 0.8)'
                 }}
-              />
+              >
+                <div className="absolute top-0 left-0 bg-pink-500 text-white px-2 py-1 text-xs font-bold">
+                  NOUVEAU PRODUIT
+                </div>
+              </div>
             )}
           </div>
 
@@ -265,7 +283,7 @@ export default function ShelfSetup() {
           <div className="bg-slate-800 rounded-xl p-6 max-w-md w-full m-4">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-xl font-bold text-white">Nouveau produit</h3>
-              <button onClick={() => setShowForm(false)} className="text-slate-400 hover:text-white">
+              <button onClick={resetDrawing} className="text-slate-400 hover:text-white">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -328,7 +346,7 @@ export default function ShelfSetup() {
               <div className="flex space-x-3">
                 <button
                   type="button"
-                  onClick={() => setShowForm(false)}
+                  onClick={resetDrawing}
                   className="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-2 rounded-lg"
                 >
                   Annuler
