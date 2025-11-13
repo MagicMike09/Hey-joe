@@ -227,9 +227,9 @@ export default function EyeTrackingCalibration() {
           </div>
 
           <div className="text-slate-300 space-y-2 text-center">
-            <p className="font-bold text-lg text-white">13 points de calibration</p>
+            <p className="font-bold text-lg text-white">5 points de calibration (rapide et efficace)</p>
             <p className="text-sm text-slate-400">
-              Durée : ~30 secondes • Précision améliorée de 30-50%
+              Durée : ~10 secondes • 4 coins + centre de l'écran
             </p>
           </div>
 
@@ -264,7 +264,7 @@ export default function EyeTrackingCalibration() {
             </p>
             <div className="mt-3 bg-green-500/20 rounded-lg p-3">
               <p className="text-green-200 text-sm">
-                ✅ 13 points calibrés • ✅ 15 enregistrements par point • ✅ Lissage actif
+                ✅ 5 points calibrés (4 coins + centre) • ✅ 15 enregistrements par point • ✅ Lissage actif
               </p>
             </div>
           </div>

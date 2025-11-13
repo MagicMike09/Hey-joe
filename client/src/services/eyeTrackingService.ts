@@ -99,32 +99,18 @@ class EyeTrackingService {
     if (points) {
       this.calibrationPoints = points
     } else {
-      // Enhanced 13-point calibration for better coverage
+      // Simple and efficient 5-point calibration
       const width = window.innerWidth
       const height = window.innerHeight
-      const margin = 0.05 // 5% margin from edges
+      const margin = 0.1 // 10% margin from edges
 
       this.calibrationPoints = [
-        // Corners
-        { x: width * (0 + margin), y: height * (0 + margin) },
-        { x: width * (1 - margin), y: height * (0 + margin) },
-        { x: width * (0 + margin), y: height * (1 - margin) },
-        { x: width * (1 - margin), y: height * (1 - margin) },
-
-        // Center of each edge
-        { x: width * 0.5, y: height * (0 + margin) },
-        { x: width * 0.5, y: height * (1 - margin) },
-        { x: width * (0 + margin), y: height * 0.5 },
-        { x: width * (1 - margin), y: height * 0.5 },
-
-        // Center
-        { x: width * 0.5, y: height * 0.5 },
-
-        // Inner ring
-        { x: width * 0.3, y: height * 0.3 },
-        { x: width * 0.7, y: height * 0.3 },
-        { x: width * 0.3, y: height * 0.7 },
-        { x: width * 0.7, y: height * 0.7 }
+        // 4 corners + center (classic 5-point calibration)
+        { x: width * margin, y: height * margin },           // Top-left
+        { x: width * (1 - margin), y: height * margin },     // Top-right
+        { x: width * 0.5, y: height * 0.5 },                 // Center
+        { x: width * margin, y: height * (1 - margin) },     // Bottom-left
+        { x: width * (1 - margin), y: height * (1 - margin) } // Bottom-right
       ]
     }
 
