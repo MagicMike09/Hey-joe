@@ -99,19 +99,24 @@ class EyeTrackingService {
     if (points) {
       this.calibrationPoints = points
     } else {
-      // Simple and efficient 5-point calibration
-      const width = window.innerWidth
-      const height = window.innerHeight
-      const margin = 0.1 // 10% margin from edges
+      // Get actual viewport dimensions (works better than window.inner*)
+      const width = document.documentElement.clientWidth || window.innerWidth
+      const height = document.documentElement.clientHeight || window.innerHeight
+
+      // 12% margin from edges for better detection (not too close to edges)
+      const marginX = Math.max(80, width * 0.12) // At least 80px from edges
+      const marginY = Math.max(60, height * 0.12) // At least 60px from edges
 
       this.calibrationPoints = [
         // 4 corners + center (classic 5-point calibration)
-        { x: width * margin, y: height * margin },           // Top-left
-        { x: width * (1 - margin), y: height * margin },     // Top-right
+        { x: marginX, y: marginY },                          // Top-left
+        { x: width - marginX, y: marginY },                  // Top-right
         { x: width * 0.5, y: height * 0.5 },                 // Center
-        { x: width * margin, y: height * (1 - margin) },     // Bottom-left
-        { x: width * (1 - margin), y: height * (1 - margin) } // Bottom-right
+        { x: marginX, y: height - marginY },                 // Bottom-left
+        { x: width - marginX, y: height - marginY }          // Bottom-right
       ]
+
+      console.log('Calibration points calculated for viewport:', { width, height, marginX, marginY, points: this.calibrationPoints })
     }
 
     return this.calibrationPoints

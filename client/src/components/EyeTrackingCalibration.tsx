@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { CheckCircle, Play, Square, Target, AlertCircle } from 'lucide-react'
 import { eyeTrackingService } from '../services/eyeTrackingService'
 import { useTrackingStore } from '../store/trackingStore'
@@ -11,6 +11,20 @@ export default function EyeTrackingCalibration() {
 
   const { setEyeTrackingActive, setCalibrating, addGazeData, setCurrentGaze } = useTrackingStore()
 
+  // Recalculate calibration points if window size changes during calibration
+  useEffect(() => {
+    if (status !== 'calibrating') return
+
+    const handleResize = () => {
+      // Recalculate points based on new window size
+      const points = eyeTrackingService.calibrate()
+      points.then(newPoints => setCalibrationPoints(newPoints))
+    }
+
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [status])
+
   const startCalibration = async () => {
     try {
       setStatus('initializing')
@@ -19,11 +33,11 @@ export default function EyeTrackingCalibration() {
       // Initialize eye tracking
       await eyeTrackingService.initialize()
 
-      // Get enhanced 13-point calibration
+      // Get 5-point calibration based on current viewport
       const points = await eyeTrackingService.calibrate()
       setCalibrationPoints(points)
 
-      // Wait a bit for camera to stabilize
+      // Wait for camera to stabilize
       setTimeout(() => {
         setStatus('calibrating')
         setCurrentPoint(0)
@@ -89,9 +103,9 @@ export default function EyeTrackingCalibration() {
   // Render calibration overlay
   if (status === 'calibrating') {
     return (
-      <div className="fixed inset-0 bg-black z-[9999] flex items-center justify-center">
+      <div className="fixed inset-0 bg-black z-[99999] flex items-center justify-center" style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh' }}>
         {/* Instructions */}
-        <div className="absolute top-8 left-1/2 transform -translate-x-1/2 text-center z-10">
+        <div className="absolute top-8 left-1/2 transform -translate-x-1/2 text-center z-[100000]">
           <h3 className="text-white text-3xl font-bold mb-3">
             {isRecording ? '🔴 Fixez le point rouge intensément !' : '🎯 Calibration Eye Tracking'}
           </h3>
@@ -121,11 +135,13 @@ export default function EyeTrackingCalibration() {
               key={index}
               onClick={() => isActive && !isRecording && handleCalibrationClick(point, index)}
               disabled={!isActive || isRecording}
-              className="absolute transform -translate-x-1/2 -translate-y-1/2 focus:outline-none"
+              className="absolute focus:outline-none"
               style={{
                 left: `${point.x}px`,
                 top: `${point.y}px`,
-                zIndex: isActive ? 100 : 1
+                transform: 'translate(-50%, -50%)',
+                zIndex: isActive ? 100001 : 100000,
+                pointerEvents: isActive ? 'auto' : 'none'
               }}
             >
               {isDone ? (
@@ -181,12 +197,17 @@ export default function EyeTrackingCalibration() {
         })}
 
         {/* Camera reminder */}
-        <div className="absolute bottom-10 left-1/2 transform -translate-x-1/2 text-center">
+        <div className="absolute bottom-10 left-1/2 transform -translate-x-1/2 text-center z-[100000]">
           <div className="bg-blue-900/80 backdrop-blur-sm px-6 py-3 rounded-lg border border-blue-500/50">
             <p className="text-blue-200 text-sm font-semibold">
               🎥 Gardez votre visage dans le cadre de la caméra (en haut à droite)
             </p>
           </div>
+        </div>
+
+        {/* Screen size indicator (debug - remove in production) */}
+        <div className="absolute top-2 left-2 text-xs text-white/50 z-[100000]">
+          {window.innerWidth}x{window.innerHeight}
         </div>
       </div>
     )
