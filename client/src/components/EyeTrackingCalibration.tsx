@@ -9,7 +9,7 @@ export default function EyeTrackingCalibration() {
   const [calibrationPoints, setCalibrationPoints] = useState<Array<{ x: number; y: number }>>([])
   const [isRecording, setIsRecording] = useState(false)
 
-  const { setEyeTrackingActive, setCalibrating, addGazeData, setCurrentGaze } = useTrackingStore()
+  const { setEyeTrackingActive, setCalibrating, addGazeData, setCurrentGaze, isConnecting } = useTrackingStore()
 
   // Recalculate calibration points if window size changes during calibration
   useEffect(() => {
@@ -24,6 +24,21 @@ export default function EyeTrackingCalibration() {
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
   }, [status])
+
+  // Pause calibration if Brain Bit connection popup appears
+  useEffect(() => {
+    if (status === 'calibrating' && isConnecting) {
+      // Cancel calibration because Bluetooth popup will block the screen
+      setStatus('idle')
+      setCalibrating(false)
+      eyeTrackingService.clearCalibration()
+      alert(
+        '⚠️ Calibration interrompue\n\n' +
+        'La popup Bluetooth du Brain Bit bloque l\'écran de calibration.\n' +
+        'Veuillez terminer ou annuler la connexion Brain Bit, puis relancer la calibration.'
+      )
+    }
+  }, [isConnecting, status, setCalibrating])
 
   const startCalibration = async () => {
     try {
@@ -272,12 +287,32 @@ export default function EyeTrackingCalibration() {
             </p>
           </div>
 
+          {isConnecting && (
+            <div className="bg-yellow-900/40 border border-yellow-500/50 rounded-lg p-4">
+              <div className="flex items-center space-x-2 text-yellow-300 mb-2">
+                <AlertCircle className="w-5 h-5" />
+                <span className="font-bold">Attendez la fin de la connexion Brain Bit</span>
+              </div>
+              <p className="text-yellow-200 text-sm">
+                La popup Bluetooth doit être fermée avant de calibrer l'eye tracking.
+                Veuillez terminer ou annuler la connexion Brain Bit d'abord.
+              </p>
+            </div>
+          )}
+
           <button
             onClick={startCalibration}
-            className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-bold py-4 px-6 rounded-lg flex items-center justify-center space-x-3 transition-all transform hover:scale-105 shadow-lg"
+            disabled={isConnecting}
+            className={`w-full font-bold py-4 px-6 rounded-lg flex items-center justify-center space-x-3 transition-all shadow-lg ${
+              isConnecting
+                ? 'bg-slate-700 text-slate-400 cursor-not-allowed'
+                : 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white transform hover:scale-105'
+            }`}
           >
             <Play className="w-6 h-6" />
-            <span className="text-lg">Commencer la calibration</span>
+            <span className="text-lg">
+              {isConnecting ? 'Attendez la connexion Brain Bit...' : 'Commencer la calibration'}
+            </span>
           </button>
         </>
       )}
