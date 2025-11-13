@@ -104,8 +104,8 @@ export default function EyeTrackingCalibration() {
   if (status === 'calibrating') {
     return (
       <div className="fixed inset-0 bg-black z-[99999] flex items-center justify-center" style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh' }}>
-        {/* Instructions */}
-        <div className="absolute top-8 left-1/2 transform -translate-x-1/2 text-center z-[100000]">
+        {/* Instructions - with pointer-events-none so they don't block clicks */}
+        <div className="absolute top-8 left-1/2 transform -translate-x-1/2 text-center z-[100000] pointer-events-none">
           <h3 className="text-white text-3xl font-bold mb-3">
             {isRecording ? '🔴 Fixez le point rouge intensément !' : '🎯 Calibration Eye Tracking'}
           </h3>
@@ -140,8 +140,9 @@ export default function EyeTrackingCalibration() {
                 left: `${point.x}px`,
                 top: `${point.y}px`,
                 transform: 'translate(-50%, -50%)',
-                zIndex: isActive ? 100001 : 100000,
-                pointerEvents: isActive ? 'auto' : 'none'
+                zIndex: isActive ? 100002 : 100000,
+                pointerEvents: isActive && !isRecording ? 'auto' : 'none',
+                cursor: isActive && !isRecording ? 'pointer' : 'default'
               }}
             >
               {isDone ? (
@@ -153,33 +154,36 @@ export default function EyeTrackingCalibration() {
                   </div>
                 </div>
               ) : isActive ? (
-                // Active point
-                <div className="relative">
-                  {/* Outer pulsing ring */}
+                // Active point - LARGER and more visible
+                <div className="relative" style={{ width: '100px', height: '100px' }}>
+                  {/* Outer pulsing ring - LARGER */}
                   {!isRecording && (
-                    <div className="absolute inset-0 animate-ping">
-                      <div className="w-20 h-20 rounded-full bg-red-500/40 transform -translate-x-1/2 -translate-y-1/2 absolute top-1/2 left-1/2" />
+                    <div className="absolute inset-0 animate-ping" style={{ pointerEvents: 'none' }}>
+                      <div className="w-32 h-32 rounded-full bg-red-500/40 transform -translate-x-1/2 -translate-y-1/2 absolute top-1/2 left-1/2" />
                     </div>
                   )}
 
-                  {/* Middle ring */}
-                  <div className="absolute inset-0">
-                    <div className={`w-14 h-14 rounded-full border-3 border-red-400 transform -translate-x-1/2 -translate-y-1/2 absolute top-1/2 left-1/2 ${isRecording ? 'animate-pulse' : ''}`} />
+                  {/* Middle ring - LARGER */}
+                  <div className="absolute inset-0" style={{ pointerEvents: 'none' }}>
+                    <div className={`w-20 h-20 rounded-full border-4 border-red-400 transform -translate-x-1/2 -translate-y-1/2 absolute top-1/2 left-1/2 ${isRecording ? 'animate-pulse' : ''}`} />
                   </div>
 
-                  {/* Center dot */}
-                  <div className={`w-8 h-8 rounded-full ${isRecording ? 'bg-red-700 animate-ping' : 'bg-red-500'} transform -translate-x-1/2 -translate-y-1/2 absolute top-1/2 left-1/2 shadow-lg shadow-red-500/50`} />
+                  {/* Center dot - LARGER and CLICKABLE */}
+                  <div
+                    className={`w-12 h-12 rounded-full ${isRecording ? 'bg-red-700 animate-ping' : 'bg-red-500'} transform -translate-x-1/2 -translate-y-1/2 absolute top-1/2 left-1/2 shadow-2xl shadow-red-500/80 cursor-pointer`}
+                    style={{ pointerEvents: 'auto' }}
+                  />
 
                   {/* Number badge */}
-                  <div className="absolute -top-10 left-1/2 transform -translate-x-1/2 bg-red-500 text-white text-sm font-bold rounded-full w-8 h-8 flex items-center justify-center border-2 border-white shadow-lg">
+                  <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 bg-red-500 text-white text-lg font-bold rounded-full w-10 h-10 flex items-center justify-center border-3 border-white shadow-xl" style={{ pointerEvents: 'none' }}>
                     {index + 1}
                   </div>
 
                   {/* "Click here" label */}
                   {!isRecording && (
-                    <div className="absolute top-14 left-1/2 transform -translate-x-1/2 whitespace-nowrap">
-                      <div className="bg-white text-black px-4 py-2 rounded-full text-sm font-bold animate-bounce shadow-lg">
-                        👆 Cliquez ici
+                    <div className="absolute top-16 left-1/2 transform -translate-x-1/2 whitespace-nowrap" style={{ pointerEvents: 'none' }}>
+                      <div className="bg-white text-black px-5 py-3 rounded-full text-base font-bold animate-bounce shadow-2xl">
+                        👆 CLIQUEZ ICI
                       </div>
                     </div>
                   )}
@@ -197,7 +201,7 @@ export default function EyeTrackingCalibration() {
         })}
 
         {/* Camera reminder */}
-        <div className="absolute bottom-10 left-1/2 transform -translate-x-1/2 text-center z-[100000]">
+        <div className="absolute bottom-10 left-1/2 transform -translate-x-1/2 text-center z-[100000] pointer-events-none">
           <div className="bg-blue-900/80 backdrop-blur-sm px-6 py-3 rounded-lg border border-blue-500/50">
             <p className="text-blue-200 text-sm font-semibold">
               🎥 Gardez votre visage dans le cadre de la caméra (en haut à droite)
@@ -206,7 +210,7 @@ export default function EyeTrackingCalibration() {
         </div>
 
         {/* Screen size indicator (debug - remove in production) */}
-        <div className="absolute top-2 left-2 text-xs text-white/50 z-[100000]">
+        <div className="absolute top-2 left-2 text-xs text-white/50 z-[100000] pointer-events-none">
           {window.innerWidth}x{window.innerHeight}
         </div>
       </div>
