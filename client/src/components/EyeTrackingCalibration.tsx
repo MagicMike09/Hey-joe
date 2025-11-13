@@ -107,9 +107,19 @@ export default function EyeTrackingCalibration() {
   // Render calibration overlay
   if (status === 'calibrating') {
     return (
-      <div className="fixed inset-0 bg-black z-[99999] flex items-center justify-center" style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh' }}>
+      <div
+        className="fixed inset-0 bg-black flex items-center justify-center"
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          zIndex: 2147483647  // Maximum z-index value to be above EVERYTHING
+        }}
+      >
         {/* Instructions - with pointer-events-none so they don't block clicks */}
-        <div className="absolute top-8 left-1/2 transform -translate-x-1/2 text-center z-[100000] pointer-events-none">
+        <div className="absolute top-8 left-1/2 transform -translate-x-1/2 text-center pointer-events-none" style={{ zIndex: 2147483647 }}>
           <h3 className="text-white text-3xl font-bold mb-3">
             {isRecording ? '🔴 Fixez le point rouge intensément !' : '🎯 Calibration Eye Tracking'}
           </h3>
@@ -144,7 +154,7 @@ export default function EyeTrackingCalibration() {
                 left: `${point.x}px`,
                 top: `${point.y}px`,
                 transform: 'translate(-50%, -50%)',
-                zIndex: isActive ? 100002 : 100000,
+                zIndex: 2147483647,  // Maximum z-index for all calibration points
                 pointerEvents: isActive && !isRecording ? 'auto' : 'none',
                 cursor: isActive && !isRecording ? 'pointer' : 'default'
               }}
@@ -205,7 +215,7 @@ export default function EyeTrackingCalibration() {
         })}
 
         {/* Camera reminder */}
-        <div className="absolute bottom-10 left-1/2 transform -translate-x-1/2 text-center z-[100000] pointer-events-none">
+        <div className="absolute bottom-10 left-1/2 transform -translate-x-1/2 text-center pointer-events-none" style={{ zIndex: 2147483647 }}>
           <div className="bg-blue-900/80 backdrop-blur-sm px-6 py-3 rounded-lg border border-blue-500/50">
             <p className="text-blue-200 text-sm font-semibold">
               🎥 Gardez votre visage stable et fixez intensément chaque point rouge
@@ -214,7 +224,7 @@ export default function EyeTrackingCalibration() {
         </div>
 
         {/* Screen size indicator (debug - remove in production) */}
-        <div className="absolute top-2 left-2 text-xs text-white/50 z-[100000] pointer-events-none">
+        <div className="absolute top-2 left-2 text-xs text-white/50 pointer-events-none" style={{ zIndex: 2147483647 }}>
           {window.innerWidth}x{window.innerHeight}
         </div>
       </div>
