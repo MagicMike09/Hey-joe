@@ -39,6 +39,10 @@ export default function EyeTrackingCalibration() {
 
       // Wait for camera to stabilize
       setTimeout(() => {
+        // Hide video preview and prediction points during calibration to prevent blocking
+        eyeTrackingService.showVideo(false)
+        eyeTrackingService.showPredictions(false)
+
         setStatus('calibrating')
         setCurrentPoint(0)
       }, 2000)
@@ -204,7 +208,7 @@ export default function EyeTrackingCalibration() {
         <div className="absolute bottom-10 left-1/2 transform -translate-x-1/2 text-center z-[100000] pointer-events-none">
           <div className="bg-blue-900/80 backdrop-blur-sm px-6 py-3 rounded-lg border border-blue-500/50">
             <p className="text-blue-200 text-sm font-semibold">
-              🎥 Gardez votre visage dans le cadre de la caméra (en haut à droite)
+              🎥 Gardez votre visage stable et fixez intensément chaque point rouge
             </p>
           </div>
         </div>
